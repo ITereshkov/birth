@@ -28,7 +28,7 @@ def type_choice_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="✅ Доход", callback_data="type:income"),
                 InlineKeyboardButton(text="✅ Расход", callback_data="type:expense"),
             ],
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel:menu")],
+            [InlineKeyboardButton(text="⬅️ Вернуться в меню", callback_data="cancel:menu")],
         ]
     )
 
@@ -54,7 +54,7 @@ def categories_keyboard(
         rows.append(nav)
 
     rows.append([InlineKeyboardButton(text="➕ Новая категория", callback_data=f"catnew:{tx_type}")])
-    rows.append([InlineKeyboardButton(text="❌ Отмена", callback_data="cancel:menu")])
+    rows.append([InlineKeyboardButton(text="⬅️ Вернуться в меню", callback_data="cancel:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -71,7 +71,7 @@ def period_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📋 Список операций", callback_data="menu:ops"),
                 InlineKeyboardButton(text="➕ Добавить", callback_data="menu:add"),
             ],
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel:menu")],
+            [InlineKeyboardButton(text="⬅️ Вернуться в меню", callback_data="cancel:menu")],
         ]
     )
 
@@ -87,7 +87,7 @@ def after_save_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="➕ Ещё", callback_data="menu:add"),
                 InlineKeyboardButton(text="📊 Итоги", callback_data="menu:summary"),
             ],
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel:menu")],
+            [InlineKeyboardButton(text="⬅️ Вернуться в меню", callback_data="cancel:menu")],
         ]
     )
 
@@ -98,10 +98,10 @@ def settings_keyboard(notifications_enabled: bool) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text=f"🔔 Уведомления: {state}", callback_data="settings:toggle_notify")],
             [InlineKeyboardButton(text="🏷 Категории", callback_data="settings:categories")],
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel:menu")],
+            [InlineKeyboardButton(text="⬅️ Вернуться в меню", callback_data="cancel:menu")],
         ]
     )
 
 
 def cancel_only_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌ Отмена", callback_data="cancel:menu")]])
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Вернуться в меню", callback_data="cancel:menu")]])
