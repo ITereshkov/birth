@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 from datetime import date
 
 import requests
@@ -75,7 +76,8 @@ class AIAnalysisService:
         system = (
             "Ты финансовый ассистент. Все данные уже переданы в JSON внутри user-сообщения. "
             "Никогда не проси прислать данные повторно. Отвечай только готовым анализом на русском: "
-            "короткий итог, топ-расходы, 5 практичных советов."
+            "короткий итог, топ-расходы, 5 практичных советов. Формулируй советы разнообразно, "
+            "не повторяй дословно рекомендации между ответами."
         )
         user = f"Сделай анализ по этим данным: {json.dumps(payload, ensure_ascii=False)}"
 
@@ -105,13 +107,14 @@ class AIAnalysisService:
         client = OpenAI(api_key=self.api_key)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            temperature=0.4,
+            temperature=0.8,
             messages=[
                 {
                     "role": "system",
                     "content": (
                         "Ты финансовый ассистент. Все данные уже переданы в JSON внутри user-сообщения. "
-                        "Никогда не проси прислать данные повторно. Дай готовый анализ и 5 советов."
+                        "Никогда не проси прислать данные повторно. Дай готовый анализ и 5 советов. "
+                        "Формулируй советы разнообразно и адаптируй под структуру расходов."
                     ),
                 },
                 {
@@ -127,13 +130,56 @@ class AIAnalysisService:
         expense = float(payload["expense"])
         diff = float(payload["difference"])
         period = payload["period"]
+        tx_count = int(payload["tx_count"])
         top = payload["top_expenses"]
+        status = "профицит" if diff > 0 else "дефицит" if diff < 0 else "баланс в ноль"
+
         top_line = (
             ", ".join([f"{x['category']}: {x['amount']:.0f}₽ ({x['share']}%)" for x in top])
             if top
             else "нет выраженных категорий"
         )
-        status = "профицит" if diff > 0 else "дефицит" if diff < 0 else "баланс в ноль"
+
+        tips_pool = [
+            "Поставьте лимит на категорию «{cat}» и проверьте исполнение через 7 дней.",
+            "Сократите «{cat}» хотя бы на {cut}% и направьте разницу в накопления.",
+            "Разбейте расходы по «{cat}» на недельные конверты, чтобы контролировать перерасход.",
+            "Для категории «{cat}» введите правило: любая трата выше {threshold} ₽ только после паузы 24 часа.",
+            "Проверьте в «{cat}» 2–3 регулярных платежа, которые можно заменить более дешёвыми аналогами.",
+            "Сформируйте автоперевод {save}% от дохода в день поступления денег.",
+            "Сделайте еженедельный разбор 15 минут: факт против плана и одна корректировка бюджета.",
+            "Если период в дефиците, сначала урежьте переменные траты, а не базовые обязательства.",
+            "Зафиксируйте целевой кэшфлоу на следующий период: минимум +{target} ₽.",
+            "Отдельно отмечайте импульсные покупки — через месяц станет видно, где теряется бюджет.",
+        ]
+
+        cat = top[0]["category"] if top else "прочее"
+        cut = random.choice([8, 10, 12, 15])
+        threshold = random.choice([1000, 1500, 2000, 3000])
+        save = random.choice([10, 15, 20])
+        target = max(5000, int(abs(diff) * 0.3) if diff != 0 else 10000)
+
+        # Подмешиваем контекстные подсказки
+        context_tips: list[str] = []
+        if tx_count < 8:
+            context_tips.append("Добавляйте операции чаще: при малом объеме данных советы менее точные.")
+        if diff < 0:
+            context_tips.append("Сейчас дефицит: временно заморозьте 1–2 второстепенные категории до выхода в плюс.")
+        elif diff > 0:
+            context_tips.append("У вас профицит: закрепите правило распределения, чтобы плюс не растворялся в спонтанных тратах.")
+
+        random.shuffle(tips_pool)
+        selected = []
+        for template in tips_pool:
+            tip = template.format(cat=cat, cut=cut, threshold=threshold, save=save, target=target)
+            if tip not in selected:
+                selected.append(tip)
+            if len(selected) == 5:
+                break
+
+        # заменяем 1-2 совета на контекстные
+        for i, ctip in enumerate(context_tips[:2]):
+            selected[i] = ctip
 
         return (
             f"📊 Период: {period['start']} — {period['end']}\n"
@@ -142,9 +188,5 @@ class AIAnalysisService:
             f"💠 Разница: {diff:.2f} ₽ ({status})\n"
             f"🏷 Топ-расходы: {top_line}\n\n"
             "Рекомендации:\n"
-            "1) Зафиксируйте лимит по самой крупной категории на следующий период.\n"
-            "2) Сначала откладывайте 10–20% дохода, затем планируйте остальные траты.\n"
-            "3) Сравните подписки и регулярные списания — отключите неиспользуемые.\n"
-            "4) Повторяющиеся крупные траты вынесите в отдельный недельный бюджет.\n"
-            "5) Раз в неделю проверяйте факт расходов против плана."
+            + "\n".join([f"{idx}) {tip}" for idx, tip in enumerate(selected, start=1)])
         )
