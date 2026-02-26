@@ -4,3 +4,4 @@ python-dotenv==1.0.1
 openai==1.52.2
 pytz==2024.2
 requests==2.32.3
+tzdata==2024.2

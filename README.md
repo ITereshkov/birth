@@ -81,3 +81,12 @@ docker compose up --build -d
 
 ## Монетизация
 Сейчас платные ограничения отключены: экспорт, анализ и уведомления доступны всем пользователям бесплатно.
+
+
+## Ошибка на Windows: `No time zone found with key Europe/Moscow`
+Если видите ошибку `ZoneInfoNotFoundError`, выполните:
+```bash
+pip install tzdata
+```
+И перезапустите бота. В коде также добавлен fallback на UTC+3, чтобы бот стартовал даже без системной tz-базы.
+

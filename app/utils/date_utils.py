@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
-from zoneinfo import ZoneInfo
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-MSK = ZoneInfo("Europe/Moscow")
-UTC = ZoneInfo("UTC")
+
+def _msk_tzinfo():
+    try:
+        return ZoneInfo("Europe/Moscow")
+    except ZoneInfoNotFoundError:
+        # Windows without tzdata: fallback to fixed UTC+3
+        return timezone(timedelta(hours=3), name="Europe/Moscow")
+
+
+MSK = _msk_tzinfo()
+UTC = timezone.utc
 
 
 @dataclass(slots=True)
