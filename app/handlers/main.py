@@ -9,12 +9,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile, Message, PreCheckoutQuery
 
 from app.keyboards.common import (
+    HIDE_MENU,
     MAIN_MENU,
     after_save_keyboard,
     categories_keyboard,
     period_keyboard,
     settings_keyboard,
     type_choice_keyboard,
+    cancel_only_keyboard,
 )
 from app.models.entities import TxType
 from app.repositories.factory import RepositoryFactory
@@ -88,14 +90,15 @@ async def start_operation(message: Message, state: FSMContext) -> None:
     tx_type = _type_from_text(message.text)
     await state.set_state(OperationStates.waiting_amount)
     await state.update_data(tx_type=tx_type.value)
-    await message.answer("Введите сумму одной строкой, например: 1250")
+    await message.answer("Введите сумму одной строкой, например: 1250", reply_markup=HIDE_MENU)
+    await message.answer("Если передумали — нажмите отмену.", reply_markup=cancel_only_keyboard())
 
 
 @router.message(OperationStates.waiting_amount)
 async def receive_amount(message: Message, state: FSMContext, repo_factory: RepositoryFactory) -> None:
     parsed = parse_entry(message.text)
     if not parsed:
-        await message.answer("⚠️ Не понял сумму. Введите число, например: 1250")
+        await message.answer("⚠️ Не понял сумму. Введите число, например: 1250", reply_markup=HIDE_MENU)
         return
 
     data = await state.get_data()
@@ -135,7 +138,8 @@ async def cb_cat_new(callback: CallbackQuery, state: FSMContext) -> None:
     tx_type = callback.data.split(":")[1]
     await state.set_state(OperationStates.waiting_new_category)
     await state.update_data(tx_type=tx_type)
-    await callback.message.answer("Введите название новой категории одной строкой")
+    await callback.message.answer("Введите название новой категории одной строкой", reply_markup=HIDE_MENU)
+    await callback.message.answer("Если передумали — нажмите отмену.", reply_markup=cancel_only_keyboard())
     await callback.answer()
 
 
@@ -249,7 +253,8 @@ async def cb_period(callback: CallbackQuery, state: FSMContext, repo_factory: Re
     period = callback.data.split(":")[1]
     if period == "custom":
         await state.set_state(PeriodStates.waiting_start)
-        await callback.message.answer("Введите дату начала: ГГГГ-ММ-ДД")
+        await callback.message.answer("Введите дату начала: ГГГГ-ММ-ДД", reply_markup=HIDE_MENU)
+        await callback.message.answer("Если передумали — нажмите отмену.", reply_markup=cancel_only_keyboard())
         await callback.answer()
         return
 
@@ -265,7 +270,8 @@ async def custom_start(message: Message, state: FSMContext) -> None:
         return
     await state.update_data(start_date=start.isoformat())
     await state.set_state(PeriodStates.waiting_end)
-    await message.answer("Введите дату конца: ГГГГ-ММ-ДД")
+    await message.answer("Введите дату конца: ГГГГ-ММ-ДД", reply_markup=HIDE_MENU)
+    await message.answer("Если передумали — нажмите отмену.", reply_markup=cancel_only_keyboard())
 
 
 @router.message(PeriodStates.waiting_end)
@@ -442,6 +448,20 @@ async def cb_choose_type(callback: CallbackQuery, state: FSMContext, repo_factor
     await _show_categories(callback.message, state, repo_factory, tx_type, page=0)
     await callback.answer()
 
+
+
+
+@router.message(Command("menu"))
+async def cmd_menu(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer("Главное меню 👇", reply_markup=MAIN_MENU)
+
+
+@router.callback_query(F.data == "cancel:menu")
+async def cb_cancel_menu(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await callback.message.answer("Ок, отменил. Вы вернулись в главное меню 👇", reply_markup=MAIN_MENU)
+    await callback.answer()
 
 @router.message(Command("consult"))
 async def cmd_consult(message: Message, consult_url: str) -> None:

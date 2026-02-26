@@ -16,6 +16,7 @@ class Settings:
     data_dir: Path
     user_db_dir: Path
     users_index_path: Path
+    export_template_path: Path | None
 
 
 def _parse_admin_ids(raw: str | None) -> set[int]:
@@ -48,4 +49,5 @@ def load_settings() -> Settings:
         data_dir=data_dir,
         user_db_dir=user_db_dir,
         users_index_path=data_dir / "users_index.db",
+        export_template_path=Path(os.getenv("EXPORT_TEMPLATE_PATH")) if os.getenv("EXPORT_TEMPLATE_PATH") else None,
     )

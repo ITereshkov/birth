@@ -38,7 +38,7 @@ async def run() -> None:
     index_repo = UserIndexRepository(settings.users_index_path)
     report_service = ReportService()
     premium_service = PremiumService()
-    export_service = ExportService(report_service)
+    export_service = ExportService(report_service, settings.export_template_path)
     ai_service = AIAnalysisService(
         api_key=settings.openai_api_key,
         report_service=report_service,
