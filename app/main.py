@@ -39,7 +39,12 @@ async def run() -> None:
     report_service = ReportService()
     premium_service = PremiumService()
     export_service = ExportService(report_service)
-    ai_service = AIAnalysisService(settings.openai_api_key, report_service)
+    ai_service = AIAnalysisService(
+        api_key=settings.openai_api_key,
+        report_service=report_service,
+        openrouter_api_key=settings.openrouter_api_key,
+        openrouter_model=settings.openrouter_model,
+    )
 
     dp.include_router(router)
     dp["repo_factory"] = repo_factory

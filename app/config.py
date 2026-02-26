@@ -9,6 +9,8 @@ from pathlib import Path
 class Settings:
     bot_token: str
     openai_api_key: str | None
+    openrouter_api_key: str | None
+    openrouter_model: str
     consult_url: str
     admin_ids: set[int]
     data_dir: Path
@@ -39,6 +41,8 @@ def load_settings() -> Settings:
     return Settings(
         bot_token=bot_token,
         openai_api_key=os.getenv("OPENAI_API_KEY"),
+        openrouter_api_key=os.getenv("OPENROUTER_API_KEY"),
+        openrouter_model=os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-120b:free"),
         consult_url=os.getenv("CONSULT_URL", "https://example.com/consult"),
         admin_ids=_parse_admin_ids(os.getenv("ADMIN_IDS")),
         data_dir=data_dir,

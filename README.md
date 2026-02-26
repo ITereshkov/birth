@@ -33,6 +33,19 @@ python -m app.main
 - `ADMIN_IDS` — опционально
 - `DATA_DIR` — по умолчанию `data`
 
+
+## ИИ-отчёт через OpenRouter (ChatGPT-совместимо)
+Для команды `/analize` можно использовать OpenRouter.
+
+Добавьте в `.env`:
+- `OPENROUTER_API_KEY=ваш_ключ`
+- `OPENROUTER_MODEL=openai/gpt-oss-120b:free` (можно заменить на другую модель OpenRouter)
+
+Логика такая:
+1. Если задан `OPENROUTER_API_KEY` — бот делает ИИ-отчёт через OpenRouter API.
+2. Если OpenRouter не задан/недоступен, но есть `OPENAI_API_KEY` — fallback на OpenAI.
+3. Если нет ни одного ключа — бот возвращает сообщение о недоступности ИИ-анализа.
+
 ## Команды
 - `/start` — онбординг + меню
 - `/help`
