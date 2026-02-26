@@ -27,6 +27,7 @@ class AIAnalysisService:
         summary = self.report_service.summarize(repo, start, end)
         expense = summary["expense"] or 1
         payload = {
+            "period": {"start": start.isoformat(), "end": end.isoformat()},
             "income": summary["income"],
             "expense": summary["expense"],
             "difference": summary["difference"],
@@ -37,24 +38,46 @@ class AIAnalysisService:
             "tx_count": len(summary["transactions"]),
         }
 
+        text: str | None = None
         if self.openrouter_api_key:
             try:
-                return self._analyze_openrouter(payload)
+                text = self._analyze_openrouter(payload)
             except Exception:
-                # fallback на OpenAI ниже
-                pass
+                text = None
 
-        if self.api_key:
-            return self._analyze_openai(payload)
+        if not text and self.api_key:
+            try:
+                text = self._analyze_openai(payload)
+            except Exception:
+                text = None
 
-        return "⚠️ ИИ-анализ недоступен: задайте OPENROUTER_API_KEY или OPENAI_API_KEY."
+        if not text:
+            return self._build_local_analysis(payload)
+
+        if self._asks_for_json(text):
+            return self._build_local_analysis(payload)
+
+        return text
+
+    @staticmethod
+    def _asks_for_json(text: str) -> bool:
+        low = text.lower()
+        triggers = [
+            "пришлите данные",
+            "отправьте данные",
+            "нужен json",
+            "нужны данные",
+            "предоставьте данные",
+        ]
+        return any(t in low for t in triggers)
 
     def _analyze_openrouter(self, payload: dict) -> str:
-        prompt = (
-            "Дай 5 практичных советов по личным финансам на русском языке, "
-            "коротко, по делу, с акцентом на топ-расходы и кэшфлоу. "
-            f"JSON: {json.dumps(payload, ensure_ascii=False)}"
+        system = (
+            "Ты финансовый ассистент. Все данные уже переданы в JSON внутри user-сообщения. "
+            "Никогда не проси прислать данные повторно. Отвечай только готовым анализом на русском: "
+            "короткий итог, топ-расходы, 5 практичных советов."
         )
+        user = f"Сделай анализ по этим данным: {json.dumps(payload, ensure_ascii=False)}"
 
         response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
@@ -65,7 +88,10 @@ class AIAnalysisService:
             data=json.dumps(
                 {
                     "model": self.openrouter_model,
-                    "messages": [{"role": "user", "content": prompt}],
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
                     "reasoning": {"enabled": True},
                 }
             ),
@@ -73,7 +99,7 @@ class AIAnalysisService:
         )
         response.raise_for_status()
         data = response.json()
-        return data["choices"][0]["message"].get("content") or "Не удалось получить ИИ-отчёт."
+        return data["choices"][0]["message"].get("content") or ""
 
     def _analyze_openai(self, payload: dict) -> str:
         client = OpenAI(api_key=self.api_key)
@@ -83,12 +109,42 @@ class AIAnalysisService:
             messages=[
                 {
                     "role": "system",
-                    "content": "Ты финансовый ассистент. Отвечай по-русски коротко и дружелюбно.",
+                    "content": (
+                        "Ты финансовый ассистент. Все данные уже переданы в JSON внутри user-сообщения. "
+                        "Никогда не проси прислать данные повторно. Дай готовый анализ и 5 советов."
+                    ),
                 },
                 {
                     "role": "user",
-                    "content": f"Дай 5 рекомендаций по бюджету на основе JSON: {json.dumps(payload, ensure_ascii=False)}",
+                    "content": f"Данные для анализа: {json.dumps(payload, ensure_ascii=False)}",
                 },
             ],
         )
-        return response.choices[0].message.content or "Не удалось сформировать рекомендации."
+        return response.choices[0].message.content or ""
+
+    def _build_local_analysis(self, payload: dict) -> str:
+        income = float(payload["income"])
+        expense = float(payload["expense"])
+        diff = float(payload["difference"])
+        period = payload["period"]
+        top = payload["top_expenses"]
+        top_line = (
+            ", ".join([f"{x['category']}: {x['amount']:.0f}₽ ({x['share']}%)" for x in top])
+            if top
+            else "нет выраженных категорий"
+        )
+        status = "профицит" if diff > 0 else "дефицит" if diff < 0 else "баланс в ноль"
+
+        return (
+            f"📊 Период: {period['start']} — {period['end']}\n"
+            f"➕ Доходы: {income:.2f} ₽\n"
+            f"➖ Расходы: {expense:.2f} ₽\n"
+            f"💠 Разница: {diff:.2f} ₽ ({status})\n"
+            f"🏷 Топ-расходы: {top_line}\n\n"
+            "Рекомендации:\n"
+            "1) Зафиксируйте лимит по самой крупной категории на следующий период.\n"
+            "2) Сначала откладывайте 10–20% дохода, затем планируйте остальные траты.\n"
+            "3) Сравните подписки и регулярные списания — отключите неиспользуемые.\n"
+            "4) Повторяющиеся крупные траты вынесите в отдельный недельный бюджет.\n"
+            "5) Раз в неделю проверяйте факт расходов против плана."
+        )
