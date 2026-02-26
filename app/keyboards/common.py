@@ -1,48 +1,108 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from __future__ import annotations
+
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
+
+MAIN_MENU = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="➖ Расход"), KeyboardButton(text="➕ Доход")],
+        [KeyboardButton(text="📊 Итоги"), KeyboardButton(text="📋 Операции")],
+        [KeyboardButton(text="📂 Экспорт (Premium)"), KeyboardButton(text="🤖 Анализ (Premium)")],
+        [KeyboardButton(text="⭐ Premium"), KeyboardButton(text="⚙️ Настройки")],
+    ],
+    resize_keyboard=True,
+)
 
 
-def tx_type_keyboard() -> InlineKeyboardMarkup:
+def type_choice_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="Это доход", callback_data="confirm:income"),
-                InlineKeyboardButton(text="Это расход", callback_data="confirm:expense"),
-            ]
-        ]
-    )
-
-
-def quick_actions_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="➕ Добавить ещё", callback_data="quick:add")],
-            [InlineKeyboardButton(text="📊 Баланс", callback_data="quick:balance")],
-            [InlineKeyboardButton(text="📤 Экспорт", callback_data="quick:export")],
-            [InlineKeyboardButton(text="🤖 Анализ", callback_data="quick:analyze")],
-        ]
-    )
-
-
-def period_keyboard(prefix: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="Сегодня", callback_data=f"period:{prefix}:today"),
-                InlineKeyboardButton(text="Неделя", callback_data=f"period:{prefix}:week"),
-                InlineKeyboardButton(text="Месяц", callback_data=f"period:{prefix}:month"),
+                InlineKeyboardButton(text="✅ Доход", callback_data="type:income"),
+                InlineKeyboardButton(text="✅ Расход", callback_data="type:expense"),
             ],
-            [InlineKeyboardButton(text="Выбрать даты", callback_data=f"period:{prefix}:custom")],
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="type:cancel")],
+        ]
+    )
+
+
+def categories_keyboard(
+    categories: list[str],
+    tx_type: str,
+    page: int,
+    page_size: int = 6,
+) -> InlineKeyboardMarkup:
+    start = page * page_size
+    chunk = categories[start : start + page_size]
+    rows: list[list[InlineKeyboardButton]] = []
+    for category in chunk:
+        rows.append([InlineKeyboardButton(text=category.title(), callback_data=f"cat:{tx_type}:{page}:{category}")])
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav.append(InlineKeyboardButton(text="◀️ Назад", callback_data=f"catpage:{tx_type}:{page - 1}"))
+    if start + page_size < len(categories):
+        nav.append(InlineKeyboardButton(text="▶️ Ещё", callback_data=f"catpage:{tx_type}:{page + 1}"))
+    if nav:
+        rows.append(nav)
+
+    rows.append(
+        [
+            InlineKeyboardButton(text="➕ Новая категория", callback_data=f"catnew:{tx_type}"),
+            InlineKeyboardButton(text="⬅️ Назад", callback_data="back:menu"),
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def period_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Сегодня", callback_data="period:today"),
+                InlineKeyboardButton(text="Неделя", callback_data="period:week"),
+                InlineKeyboardButton(text="Месяц", callback_data="period:month"),
+            ],
+            [InlineKeyboardButton(text="Выбрать даты", callback_data="period:custom")],
+            [
+                InlineKeyboardButton(text="📋 Список операций", callback_data="menu:ops"),
+                InlineKeyboardButton(text="➕ Добавить", callback_data="menu:add"),
+            ],
+        ]
+    )
+
+
+def after_save_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="↩️ Отменить", callback_data="tx:undo"),
+                InlineKeyboardButton(text="✏️ Категория", callback_data="tx:recat"),
+            ],
+            [
+                InlineKeyboardButton(text="➕ Ещё", callback_data="menu:add"),
+                InlineKeyboardButton(text="📊 Итоги", callback_data="menu:summary"),
+            ],
         ]
     )
 
 
 def premium_buy_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="Купить Premium ⭐️", callback_data="premium:buy")]]
+        inline_keyboard=[[InlineKeyboardButton(text="Оплатить 100 ⭐", callback_data="premium:buy")]]
     )
 
 
-def category_create_keyboard() -> InlineKeyboardMarkup:
+def settings_keyboard(notifications_enabled: bool) -> InlineKeyboardMarkup:
+    state = "ВКЛ" if notifications_enabled else "ВЫКЛ"
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="Создать категорию", callback_data="category:create")]]
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"🔔 Уведомления (Premium): {state}", callback_data="settings:toggle_notify")],
+            [InlineKeyboardButton(text="🏷 Категории", callback_data="settings:categories")],
+            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back:menu")],
+        ]
     )

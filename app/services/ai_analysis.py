@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
-from typing import Any
+from datetime import date
 
 from openai import OpenAI
 
@@ -15,27 +14,20 @@ class AIAnalysisService:
         self.api_key = api_key
         self.report_service = report_service
 
-    def analyze(self, repo: UserRepository, start: datetime, end: datetime) -> str:
+    def analyze(self, repo: UserRepository, start: date, end: date) -> str:
         if not self.api_key:
-            return "ИИ-анализ недоступен: не настроен OPENAI_API_KEY."
+            return "⚠️ ИИ-анализ недоступен: не настроен OPENAI_API_KEY."
 
         summary = self.report_service.summarize(repo, start, end)
         expense = summary["expense"] or 1
-        top_categories = sorted(
-            (
-                {"category": k, "amount": v, "share": round((v / expense) * 100, 1)}
-                for k, v in summary["by_category"].items()
-                if k.startswith("expense:")
-            ),
-            key=lambda x: x["amount"],
-            reverse=True,
-        )[:5]
-
-        payload: dict[str, Any] = {
+        payload = {
             "income": summary["income"],
             "expense": summary["expense"],
-            "cash_flow": summary["cash_flow"],
-            "top_expense_categories": top_categories,
+            "difference": summary["difference"],
+            "top_expenses": [
+                {"category": c, "amount": a, "share": round((a / expense) * 100, 1)}
+                for c, a in summary["top_expenses"]
+            ],
             "tx_count": len(summary["transactions"]),
         }
 
@@ -46,11 +38,11 @@ class AIAnalysisService:
             messages=[
                 {
                     "role": "system",
-                    "content": "Ты финансовый ассистент. Дай короткие практичные рекомендации на русском.",
+                    "content": "Ты финансовый ассистент. Отвечай по-русски коротко и дружелюбно.",
                 },
                 {
                     "role": "user",
-                    "content": f"Проанализируй статистику и дай 5 рекомендаций: {json.dumps(payload, ensure_ascii=False)}",
+                    "content": f"Дай 5 рекомендаций по бюджету на основе JSON: {json.dumps(payload, ensure_ascii=False)}",
                 },
             ],
         )

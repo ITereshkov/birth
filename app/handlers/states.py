@@ -1,15 +1,13 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class SetupStates(StatesGroup):
-    waiting_timezone = State()
+class OperationStates(StatesGroup):
+    waiting_amount = State()
+    waiting_type = State()
+    waiting_category = State()
+    waiting_new_category = State()
 
 
-class TransactionStates(StatesGroup):
-    waiting_tx_type = State()
-    waiting_category_confirm = State()
-
-
-class CustomRangeStates(StatesGroup):
+class PeriodStates(StatesGroup):
     waiting_start = State()
     waiting_end = State()

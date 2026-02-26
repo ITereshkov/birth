@@ -28,23 +28,19 @@ class UserIndexRepository:
                 """
                 CREATE TABLE IF NOT EXISTS users (
                     user_id INTEGER PRIMARY KEY,
-                    timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
                     last_fact_at TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
                 """
             )
+            cols = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+            if "timezone" in cols:
+                # legacy column, ignored by new UX
+                pass
 
-    def ensure_user(self, user_id: int, timezone: str = "Europe/Moscow") -> None:
+    def ensure_user(self, user_id: int) -> None:
         with self._connect() as conn:
-            conn.execute(
-                "INSERT OR IGNORE INTO users(user_id, timezone) VALUES(?, ?)",
-                (user_id, timezone),
-            )
-
-    def update_timezone(self, user_id: int, timezone: str) -> None:
-        with self._connect() as conn:
-            conn.execute("UPDATE users SET timezone = ? WHERE user_id = ?", (timezone, user_id))
+            conn.execute("INSERT OR IGNORE INTO users(user_id) VALUES(?)", (user_id,))
 
     def all_users(self) -> list[sqlite3.Row]:
         with self._connect() as conn:

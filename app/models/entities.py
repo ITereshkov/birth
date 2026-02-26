@@ -11,19 +11,8 @@ class TxType(str, Enum):
 
 
 @dataclass(slots=True)
-class Transaction:
-    id: int
-    amount: float
-    category: str
-    tx_type: TxType
-    happened_at: datetime
-    comment: str | None = None
-
-
-@dataclass(slots=True)
 class UserProfile:
     user_id: int
-    timezone: str
     currency: str
     premium_until: datetime | None
     notifications_enabled: bool
