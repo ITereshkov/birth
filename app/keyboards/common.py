@@ -11,7 +11,7 @@ MAIN_MENU = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="➖ Расход"), KeyboardButton(text="➕ Доход")],
         [KeyboardButton(text="📊 Итоги"), KeyboardButton(text="📋 Операции")],
-        [KeyboardButton(text="📂 Экспорт (Premium)"), KeyboardButton(text="🤖 Анализ (Premium)")],
+        [KeyboardButton(text="📂 Экспорт"), KeyboardButton(text="🤖 Анализ")],
         [KeyboardButton(text="⭐ Premium"), KeyboardButton(text="⚙️ Настройки")],
     ],
     resize_keyboard=True,
@@ -101,7 +101,7 @@ def settings_keyboard(notifications_enabled: bool) -> InlineKeyboardMarkup:
     state = "ВКЛ" if notifications_enabled else "ВЫКЛ"
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"🔔 Уведомления (Premium): {state}", callback_data="settings:toggle_notify")],
+            [InlineKeyboardButton(text=f"🔔 Уведомления: {state}", callback_data="settings:toggle_notify")],
             [InlineKeyboardButton(text="🏷 Категории", callback_data="settings:categories")],
             [InlineKeyboardButton(text="⬅️ Назад", callback_data="back:menu")],
         ]

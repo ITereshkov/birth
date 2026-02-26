@@ -6,14 +6,13 @@ from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile, LabeledPrice, Message, PreCheckoutQuery
+from aiogram.types import CallbackQuery, FSInputFile, Message, PreCheckoutQuery
 
 from app.keyboards.common import (
     MAIN_MENU,
     after_save_keyboard,
     categories_keyboard,
     period_keyboard,
-    premium_buy_keyboard,
     settings_keyboard,
     type_choice_keyboard,
 )
@@ -171,11 +170,6 @@ async def _save_operation(message: Message, state: FSMContext, repo_factory: Rep
     today = now_msk().date()
     month_count = repo.month_tx_count(today.year, today.month)
 
-    premium_service = PremiumService()
-    if not premium_service.can_add_transaction(profile, month_count, datetime.utcnow()):
-        await message.answer("⚠️ В Free доступно 100 записей в месяц. Подключите Premium.", reply_markup=premium_buy_keyboard())
-        return
-
     tx_type = TxType(data["tx_type"])
     amount = float(data["amount"])
     category = str(data["selected_category"]).lower()
@@ -311,30 +305,23 @@ async def show_operations(message: Message, repo_factory: RepositoryFactory) -> 
     await message.answer("\n".join(lines))
 
 
-@router.message(F.text == "📂 Экспорт (Premium)")
+@router.message(F.text == "📂 Экспорт")
 @router.message(Command("export"))
 async def cmd_export(message: Message, repo_factory: RepositoryFactory, premium_service: PremiumService, export_service: ExportService) -> None:
     user_id = message.from_user.id
     repo = repo_factory.user_repo(user_id)
     profile = repo.get_profile(user_id)
-    if not premium_service.is_premium(profile, datetime.utcnow()):
-        await message.answer("⚠️ Экспорт доступен только в Premium.", reply_markup=premium_buy_keyboard())
-        return
     dr = month_range()
     out_path = export_service.export_xlsx(repo, dr.start_date, dr.end_date, repo_factory.user_db_dir / f"export_{user_id}.xlsx")
     await message.answer_document(FSInputFile(out_path), caption="✅ Файл Excel готов")
 
 
-@router.message(F.text == "🤖 Анализ (Premium)")
+@router.message(F.text == "🤖 Анализ")
 @router.message(Command("analize"))
 async def cmd_analize(message: Message, repo_factory: RepositoryFactory, premium_service: PremiumService, ai_service: AIAnalysisService) -> None:
     user_id = message.from_user.id
     repo = repo_factory.user_repo(user_id)
     profile = repo.get_profile(user_id)
-    if not premium_service.is_premium(profile, datetime.utcnow()):
-        await message.answer("⚠️ ИИ-анализ доступен только в Premium.", reply_markup=premium_buy_keyboard())
-        return
-
     dr = month_range()
     text = ai_service.analyze(repo, dr.start_date, dr.end_date)
     await message.answer(f"🤖 Анализ:\n{text}")
@@ -347,30 +334,12 @@ async def cmd_premium(message: Message, repo_factory: RepositoryFactory, premium
     repo = repo_factory.user_repo(user_id)
     profile = repo.get_profile(user_id)
     now = datetime.utcnow()
-    if premium_service.is_premium(profile, now):
-        await message.answer(f"✅ Premium активирован до {profile.premium_until:%d.%m.%Y}")
-    else:
-        await message.answer(
-            "⭐ Premium на 30 дней\n"
-            "• Безлимит записей\n"
-            "• Экспорт в Excel\n"
-            "• Уведомления\n"
-            "• ИИ-анализ\n"
-            "Цена: 100 ⭐",
-            reply_markup=premium_buy_keyboard(),
-        )
+    await message.answer("✅ Все функции сейчас бесплатны: экспорт, анализ и уведомления уже доступны.")
 
 
 @router.callback_query(F.data == "premium:buy")
 async def cb_buy_premium(callback: CallbackQuery) -> None:
-    await callback.message.answer_invoice(
-        title="Premium на 30 дней",
-        description="Безлимит записей, экспорт, уведомления и ИИ-анализ",
-        payload="premium_30_days",
-        currency="XTR",
-        prices=[LabeledPrice(label="Premium", amount=100)],
-        provider_token="",
-    )
+    await callback.message.answer("✅ Сейчас оплачивать ничего не нужно — все функции бесплатны.")
     await callback.answer()
 
 
@@ -400,10 +369,6 @@ async def cmd_settings(message: Message, repo_factory: RepositoryFactory) -> Non
 async def cb_toggle_notify(callback: CallbackQuery, repo_factory: RepositoryFactory, premium_service: PremiumService) -> None:
     repo = repo_factory.user_repo(callback.from_user.id)
     profile = repo.get_profile(callback.from_user.id)
-    if not premium_service.is_premium(profile, datetime.utcnow()):
-        await callback.message.answer("⚠️ Уведомления доступны только в Premium.")
-        await callback.answer()
-        return
     repo.set_notifications_enabled(callback.from_user.id, not profile.notifications_enabled)
     profile = repo.get_profile(callback.from_user.id)
     await callback.message.answer("✅ Настройки обновлены", reply_markup=settings_keyboard(profile.notifications_enabled))
