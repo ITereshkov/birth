@@ -17,6 +17,7 @@ interface Ctx {
   updateTransaction: (tx: Transaction) => void;
   deleteTransaction: (id: string) => void;
   resetAll: () => void;
+  setCurrency: (currency: AppState['settings']['currency']) => void;
   undoMeta: { txId: string; expiresAt: number } | null;
   undoLast: () => void;
 }
@@ -74,6 +75,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return ns;
     }),
     resetAll: () => setState({ accounts: [], categories: [], transactions: [], settings: { currency: 'RUB', firstRunDone: false } }),
+    setCurrency: (currency) => setState((s) => ({ ...s, settings: { ...s.settings, currency } })),
     undoMeta,
     undoLast: () => {
       setState((s) => {

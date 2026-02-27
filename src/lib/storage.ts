@@ -17,7 +17,22 @@ export const emptyState = (): AppState => ({
 export const loadState = (): AppState => {
   const raw = localStorage.getItem(KEY);
   if (!raw) return emptyState();
-  try { return JSON.parse(raw) as AppState; } catch { return emptyState(); }
+  try {
+    const parsed = JSON.parse(raw) as AppState;
+    const currency = parsed.settings?.currency;
+    const safeCurrency = currency === 'USD' || currency === 'EUR' || currency === 'GBP' || currency === 'RUB' ? currency : 'RUB';
+    return {
+      ...emptyState(),
+      ...parsed,
+      settings: {
+        ...emptyState().settings,
+        ...parsed.settings,
+        currency: safeCurrency,
+      },
+    };
+  } catch {
+    return emptyState();
+  }
 };
 
 export const saveState = (state: AppState) => localStorage.setItem(KEY, JSON.stringify(state));

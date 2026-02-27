@@ -30,7 +30,7 @@ export interface AppState {
   accounts: Account[];
   categories: Category[];
   transactions: Transaction[];
-  settings: { currency: 'RUB'; firstRunDone: boolean };
+  settings: { currency: 'RUB' | 'USD' | 'EUR' | 'GBP'; firstRunDone: boolean };
 }
 
 export type Period = 'today' | 'week' | 'month' | 'custom';

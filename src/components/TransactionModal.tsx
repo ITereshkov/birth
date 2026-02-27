@@ -7,7 +7,7 @@ import { toInputDate } from '../lib/utils';
 export const TransactionModal = ({ current, onClose, defaultType = 'expense' }: { current?: Transaction; onClose: () => void; defaultType?: TransactionType }) => {
   const { state, addTransaction, updateTransaction, deleteTransaction } = useApp();
   const [type, setType] = useState<TransactionType>(current?.type ?? defaultType);
-  const [amount, setAmount] = useState(current?.amount ?? 0);
+  const [amount, setAmount] = useState(current ? String(current.amount) : '');
   const [accountId, setAccountId] = useState(current?.accountId ?? state.accounts[0]?.id ?? '');
   const [categoryId, setCategoryId] = useState(current?.categoryId ?? state.categories.find((c) => c.type === type)?.id ?? '');
   const [date, setDate] = useState(current ? toInputDate(new Date(current.date)) : toInputDate(new Date()));
@@ -16,8 +16,9 @@ export const TransactionModal = ({ current, onClose, defaultType = 'expense' }: 
   const filteredCategories = useMemo(() => state.categories.filter((c) => c.type === type), [state.categories, type]);
 
   const save = () => {
-    if (!amount || !accountId || !categoryId) return;
-    const payload = { type, amount, accountId, categoryId, date: `${date}T12:00:00.000Z`, comment };
+    const parsedAmount = Number(amount);
+    if (!parsedAmount || !accountId || !categoryId) return;
+    const payload = { type, amount: parsedAmount, accountId, categoryId, date: `${date}T00:00:00`, comment };
     if (current) updateTransaction({ ...current, ...payload });
     else addTransaction(payload);
     onClose();
@@ -31,7 +32,7 @@ export const TransactionModal = ({ current, onClose, defaultType = 'expense' }: 
           <Select value={type} onChange={(e) => { setType(e.target.value as TransactionType); setCategoryId(state.categories.find((c) => c.type === e.target.value)?.id ?? ''); }}>
             <option value="expense">Расход</option><option value="income">Доход</option>
           </Select>
-          <Input type="number" min="0" value={amount} onChange={(e) => setAmount(Number(e.target.value))} placeholder="Сумма" />
+          <Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Сумма" />
           <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             {filteredCategories.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
           </Select>

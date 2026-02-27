@@ -9,6 +9,7 @@ import { formatMoney } from '../lib/utils';
 
 export const History = ({ onEdit, onAdd }: { onEdit: (id: string) => void; onAdd: () => void }) => {
   const { state } = useApp();
+  const currency = state.settings.currency;
   const [period, setPeriod] = useState<Period>('month');
   const [type, setType] = useState<'all' | 'income' | 'expense'>('all');
   const [account, setAccount] = useState('all');
@@ -37,7 +38,7 @@ export const History = ({ onEdit, onAdd }: { onEdit: (id: string) => void; onAdd
     <h2 className="text-4xl font-bold">История</h2>
     <Input placeholder="🔎 Поиск по примечаниям" value={query} onChange={(e) => setQuery(e.target.value)} />
 
-    <CardHeader title={format(new Date(), 'LLLL yyyy', { locale: ru })} value={base.net_cashflow} />
+    <CardHeader title={format(new Date(), 'LLLL yyyy', { locale: ru })} value={base.net_cashflow} currency={currency} />
 
     <div className="grid grid-cols-2 gap-2">
       <Select value={period} onChange={(e) => setPeriod(e.target.value as Period)}><option value="today">Сегодня</option><option value="week">Неделя</option><option value="month">Месяц</option></Select>
@@ -60,7 +61,7 @@ export const History = ({ onEdit, onAdd }: { onEdit: (id: string) => void; onAdd
             const acc = state.accounts.find((a) => a.id === t.accountId);
             return <button key={t.id} onClick={() => onEdit(t.id)} className="flex w-full items-center justify-between rounded-2xl px-2 py-2 text-left" style={{ background: 'rgba(255,255,255,.03)' }}>
               <div className="text-sm"><div>{cat?.icon} {cat?.name}</div><div className="text-xs" style={{ color: 'var(--tg-hint)' }}>{t.comment || '—'} · {acc?.name}</div></div>
-              <div className={t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}>{t.type === 'income' ? '+' : '-'}{formatMoney(t.amount)}</div>
+              <div className={t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}>{t.type === 'income' ? '+' : '-'}{formatMoney(t.amount, currency)}</div>
             </button>;
           })}
         </div>
@@ -69,10 +70,10 @@ export const History = ({ onEdit, onAdd }: { onEdit: (id: string) => void; onAdd
   </div>;
 };
 
-const CardHeader = ({ title, value }: { title: string; value: number }) => (
+const CardHeader = ({ title, value, currency }: { title: string; value: number; currency: 'RUB'|'USD'|'EUR'|'GBP' }) => (
   <div className="rounded-3xl border px-4 py-4 text-center" style={{ background: 'var(--tg-surface)', borderColor: 'rgba(255,255,255,.1)' }}>
     <div className="text-2xl font-semibold capitalize">{title}</div>
     <div className="mt-2 text-lg" style={{ color: 'var(--tg-hint)' }}>сальдо</div>
-    <div className="text-6xl font-bold">{formatMoney(value)}</div>
+    <div className="text-6xl font-bold">{formatMoney(value, currency)}</div>
   </div>
 );
