@@ -23,9 +23,11 @@ export const useTelegram = () => {
     webApp.expand();
     const p = webApp.themeParams ?? {};
     if (p.bg_color) document.documentElement.style.setProperty('--tg-bg', p.bg_color);
+    if (p.secondary_bg_color) document.documentElement.style.setProperty('--tg-surface', p.secondary_bg_color);
     if (p.text_color) document.documentElement.style.setProperty('--tg-text', p.text_color);
     if (p.hint_color) document.documentElement.style.setProperty('--tg-hint', p.hint_color);
     if (p.button_color) document.documentElement.style.setProperty('--tg-btn', p.button_color);
+    if (p.button_text_color) document.documentElement.style.setProperty('--tg-btn-text', p.button_text_color);
   }, [webApp]);
 
   return {

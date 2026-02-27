@@ -1,17 +1,17 @@
 import { PropsWithChildren } from 'react';
 
 export const Card = ({ children, className = '' }: PropsWithChildren<{ className?: string }>) => (
-  <div className={`rounded-2xl bg-white/85 p-4 shadow-sm ${className}`}>{children}</div>
+  <div className={`rounded-2xl border border-black/5 p-4 shadow-sm ${className}`} style={{ background: 'var(--tg-surface)', color: 'var(--tg-text)' }}>{children}</div>
 );
 
 export const Button = ({ children, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button className={`rounded-xl px-4 py-2 font-medium text-white disabled:opacity-50 ${className}`} style={{ background: 'var(--tg-btn)' }} {...props}>{children}</button>
+  <button className={`rounded-xl px-4 py-2 font-medium disabled:opacity-50 ${className}`} style={{ background: 'var(--tg-btn)', color: 'var(--tg-btn-text)' }} {...props}>{children}</button>
 );
 
 export const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" {...props} />
+  <input className="w-full rounded-xl border border-slate-200/70 px-3 py-2" style={{ background: 'var(--tg-surface)', color: 'var(--tg-text)' }} {...props} />
 );
 
 export const Select = ({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-  <select className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" {...props}>{children}</select>
+  <select className="w-full rounded-xl border border-slate-200/70 px-3 py-2" style={{ background: 'var(--tg-surface)', color: 'var(--tg-text)' }} {...props}>{children}</select>
 );

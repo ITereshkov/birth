@@ -18,11 +18,12 @@ const Inner = () => {
   const editTx = useMemo(() => state.transactions.find((t) => t.id === modal?.id), [state.transactions, modal]);
 
   if (!state.settings.firstRunDone) {
-    return <div className="mx-auto max-w-md p-4"><div className="rounded-2xl bg-white p-5 shadow"><h1 className="text-xl font-bold">👋 Привет! Это ФинАгент</h1><p className="mt-2 text-sm text-slate-600">Быстрый учёт денег. Добавь счёт, затем занеси первую операцию.</p><Button className="mt-3" onClick={startOnboarding}>Начать</Button></div></div>;
+    return <div className="mx-auto max-w-md p-4"><div className="rounded-2xl p-5 shadow" style={{ background: 'var(--tg-surface)' }}><h1 className="text-xl font-bold">👋 Привет! Это ФинАгент</h1><p className="mt-2 text-sm" style={{ color: 'var(--tg-hint)' }}>Быстрый учёт денег. Добавь счёт, затем занеси первую операцию.</p><Button className="mt-3" onClick={startOnboarding}>Начать</Button></div></div>;
   }
 
   return <div className="mx-auto min-h-screen max-w-md p-3 pb-24">
     <h1 className="mb-2 text-xl font-bold">ФинАгент</h1>
+    <p className="mb-3 text-xs" style={{ color: 'var(--tg-hint)' }}>Учет доходов и расходов в Telegram Mini App</p>
     {tab===0 && <Dashboard openAdd={(type)=>setModal({ type })} goHistory={() => setTab(1)} />}
     {tab===1 && <History onEdit={(id)=>setModal({ id })} onAdd={()=>setModal({})} />}
     {tab===2 && <Reports />}

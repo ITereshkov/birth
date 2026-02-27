@@ -16,10 +16,10 @@ export const Dashboard = ({ openAdd, goHistory }: { openAdd: (type?: 'income'|'e
 
   return <div className="space-y-3">
     <Card>
-      <div className="text-sm text-slate-500">Баланс</div>
+      <div className="text-sm" style={{ color: 'var(--tg-hint)' }}>Общий баланс</div>
       <div className="text-3xl font-bold">{formatMoney(totalBalance)}</div>
       <div className="mt-2 flex gap-2 text-sm">
-        {(['today','week','month','custom'] as Period[]).map((p) => <button key={p} onClick={() => setPeriod(p)} className={`rounded-lg px-2 py-1 ${period===p?'bg-slate-200':''}`}>{p==='today'?'Сегодня':p==='week'?'Неделя':p==='month'?'Месяц':'Выбрать'}</button>)}
+        {(['today','week','month','custom'] as Period[]).map((p) => <button key={p} onClick={() => setPeriod(p)} className={`rounded-lg px-2 py-1 ${period===p?'bg-slate-200/70 font-medium':''}`}>{p==='today'?'Сегодня':p==='week'?'Неделя':p==='month'?'Месяц':'Выбрать'}</button>)}
       </div>
       {period==='custom' && <div className="mt-2 grid grid-cols-2 gap-2"><Input type="date" value={from} onChange={(e)=>setFrom(e.target.value)} /><Input type="date" value={to} onChange={(e)=>setTo(e.target.value)} /></div>}
       <div className="mt-3 grid grid-cols-3 text-sm">
@@ -45,7 +45,7 @@ export const Dashboard = ({ openAdd, goHistory }: { openAdd: (type?: 'income'|'e
         const cat = state.categories.find((c) => c.id === t.categoryId);
         return <div key={t.id} className="flex items-center justify-between text-sm"><span>{cat?.icon} {cat?.name} · {formatRuDate(t.date)}</span><b className={t.type==='income'?'text-emerald-600':'text-rose-600'}>{t.type==='income'?'+':'-'}{formatMoney(t.amount)}</b></div>;
       })}
-      {state.transactions.length===0 && <div className="text-sm text-slate-500">Нет операций. Добавьте первую.</div>}
+      {state.transactions.length===0 && <div className="text-sm" style={{ color: 'var(--tg-hint)' }}>Нет операций. Добавьте первую.</div>}
     </Card>
   </div>;
 };

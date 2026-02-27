@@ -25,7 +25,7 @@ export const TransactionModal = ({ current, onClose, defaultType = 'expense' }: 
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 p-4">
-      <div className="mx-auto mt-10 max-w-md rounded-2xl bg-white p-4">
+      <div className="mx-auto mt-10 max-w-md rounded-2xl p-4" style={{ background: 'var(--tg-surface)' }}>
         <h3 className="mb-3 font-semibold">{current ? 'Редактировать операцию' : 'Новая операция'}</h3>
         <div className="space-y-2">
           <Select value={type} onChange={(e) => { setType(e.target.value as TransactionType); setCategoryId(state.categories.find((c) => c.type === e.target.value)?.id ?? ''); }}>

@@ -4,9 +4,11 @@
 
 :root {
   --tg-bg: #f6f7fb;
+  --tg-surface: #ffffff;
   --tg-text: #111827;
   --tg-hint: #6b7280;
   --tg-btn: #3b82f6;
+  --tg-btn-text: #ffffff;
 }
 
 body {
@@ -14,4 +16,8 @@ body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
   background: var(--tg-bg);
   color: var(--tg-text);
+}
+
+#root {
+  min-height: 100vh;
 }
