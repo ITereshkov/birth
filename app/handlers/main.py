@@ -89,7 +89,7 @@ async def cmd_help(message: Message) -> None:
 async def start_operation(message: Message, state: FSMContext) -> None:
     tx_type = _type_from_text(message.text)
     await state.set_state(OperationStates.waiting_amount)
-    await state.update_data(tx_type=tx_type.value, source_message_id=message.message_id)
+    await state.update_data(tx_type=tx_type.value)
     await message.answer("Введите сумму одной строкой, например: 1250", reply_markup=HIDE_MENU)
     await message.answer("Если передумали — нажмите отмену.", reply_markup=cancel_only_keyboard())
 
@@ -104,7 +104,7 @@ async def receive_amount(message: Message, state: FSMContext, repo_factory: Repo
     data = await state.get_data()
     tx_type = TxType(data["tx_type"])
     category_hint = parsed.category
-    await state.update_data(amount=parsed.amount, category_hint=category_hint, source_message_id=message.message_id)
+    await state.update_data(amount=parsed.amount, category_hint=category_hint)
     await _show_categories(message, state, repo_factory, tx_type, page=0)
 
 
@@ -154,7 +154,7 @@ async def create_new_category(message: Message, state: FSMContext, repo_factory:
     user_id = message.chat.id
     repo = repo_factory.user_repo(user_id)
     repo.add_category(category, tx_type)
-    await state.update_data(selected_category=category, source_message_id=message.message_id)
+    await state.update_data(selected_category=category)
     await _save_operation(message, state, repo_factory)
 
 
@@ -178,20 +178,9 @@ async def _save_operation(message: Message, state: FSMContext, repo_factory: Rep
     amount = float(data["amount"])
     category = str(data["selected_category"]).lower()
 
-    source_message_id = data.get("source_message_id")
     tx_id = repo.add_transaction(amount, category, tx_type, now_utc())
     await state.clear()
     await state.update_data(last_tx_id=tx_id)
-
-    if tx_type == TxType.INCOME and source_message_id:
-        try:
-            await message.bot.set_message_reaction(
-                chat_id=user_id,
-                message_id=int(source_message_id),
-                reaction=[ReactionTypeEmoji(emoji="🔥")],
-            )
-        except Exception:
-            pass
 
     human_date = format_human_date(now_msk().date())
     if tx_type == TxType.INCOME:
@@ -210,7 +199,24 @@ async def _save_operation(message: Message, state: FSMContext, repo_factory: Rep
             f"📅 {human_date}\n\n"
             "✅ Готово."
         )
-    await message.answer(text, reply_markup=after_save_keyboard())
+    saved_message = await message.answer(text, reply_markup=after_save_keyboard())
+
+    if tx_type == TxType.INCOME:
+        try:
+            await message.bot.set_message_reaction(
+                chat_id=user_id,
+                message_id=saved_message.message_id,
+                reaction=[ReactionTypeEmoji(emoji="🔥")],
+                is_big=True,
+            )
+        except TypeError:
+            await message.bot.set_message_reaction(
+                chat_id=user_id,
+                message_id=saved_message.message_id,
+                reaction=[ReactionTypeEmoji(emoji="🔥")],
+            )
+        except Exception:
+            pass
 
 
 @router.callback_query(F.data == "tx:undo")
@@ -441,7 +447,7 @@ async def free_text_input(message: Message, state: FSMContext, repo_factory: Rep
     if not parsed:
         return
 
-    await state.update_data(amount=parsed.amount, category_hint=parsed.category, source_message_id=message.message_id)
+    await state.update_data(amount=parsed.amount, category_hint=parsed.category)
     if parsed.tx_type is None:
         await state.set_state(OperationStates.waiting_type)
         await message.answer("❓ Это доход или расход?", reply_markup=type_choice_keyboard())
