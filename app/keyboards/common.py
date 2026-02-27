@@ -81,7 +81,7 @@ def after_save_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="↩️ Отменить", callback_data="tx:undo"),
-                InlineKeyboardButton(text="✏️ Категория", callback_data="tx:recat"),
+                InlineKeyboardButton(text="🤖 Анализ", callback_data="menu:analyze"),
             ],
             [
                 InlineKeyboardButton(text="➕ Ещё", callback_data="menu:add"),

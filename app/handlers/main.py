@@ -230,9 +230,9 @@ async def cb_undo(callback: CallbackQuery, repo_factory: RepositoryFactory) -> N
     await callback.answer()
 
 
-@router.callback_query(F.data == "tx:recat")
-async def cb_recat(callback: CallbackQuery) -> None:
-    await callback.message.answer("⚠️ Для смены категории проще отменить и добавить заново.")
+@router.callback_query(F.data == "menu:analyze")
+async def cb_menu_analyze(callback: CallbackQuery, repo_factory: RepositoryFactory, ai_service: AIAnalysisService) -> None:
+    await _send_analysis(callback.message, repo_factory, ai_service)
     await callback.answer()
 
 
@@ -333,15 +333,20 @@ async def cmd_export(message: Message, repo_factory: RepositoryFactory, premium_
     await message.answer_document(FSInputFile(out_path), caption="✅ Файл Excel готов")
 
 
-@router.message(F.text == "🤖 Анализ")
-@router.message(Command("analize"))
-async def cmd_analize(message: Message, repo_factory: RepositoryFactory, premium_service: PremiumService, ai_service: AIAnalysisService) -> None:
-    user_id = message.from_user.id
+
+
+async def _send_analysis(message: Message, repo_factory: RepositoryFactory, ai_service: AIAnalysisService) -> None:
+    user_id = message.chat.id
     repo = repo_factory.user_repo(user_id)
-    profile = repo.get_profile(user_id)
     dr = month_range()
     text = ai_service.analyze(repo, dr.start_date, dr.end_date)
     await message.answer(f"🤖 Анализ:\n{text}")
+
+
+@router.message(F.text == "🤖 Анализ")
+@router.message(Command("analize"))
+async def cmd_analize(message: Message, repo_factory: RepositoryFactory, premium_service: PremiumService, ai_service: AIAnalysisService) -> None:
+    await _send_analysis(message, repo_factory, ai_service)
 
 
 @router.message(F.text == "⭐ Premium")
