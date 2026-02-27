@@ -10,7 +10,7 @@ export const TransactionModal = ({ current, onClose, defaultType = 'expense' }: 
   const [amount, setAmount] = useState(current?.amount ?? 0);
   const [accountId, setAccountId] = useState(current?.accountId ?? state.accounts[0]?.id ?? '');
   const [categoryId, setCategoryId] = useState(current?.categoryId ?? state.categories.find((c) => c.type === type)?.id ?? '');
-  const [date, setDate] = useState((current?.date ?? new Date().toISOString()).slice(0, 10));
+  const [date, setDate] = useState(current ? toInputDate(new Date(current.date)) : toInputDate(new Date()));
   const [comment, setComment] = useState(current?.comment ?? '');
 
   const filteredCategories = useMemo(() => state.categories.filter((c) => c.type === type), [state.categories, type]);

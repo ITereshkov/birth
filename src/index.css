@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  --tg-bg: #f6f7fb;
-  --tg-surface: #ffffff;
-  --tg-text: #111827;
-  --tg-hint: #6b7280;
-  --tg-btn: #3b82f6;
+  --tg-bg: #050608;
+  --tg-surface: #17191e;
+  --tg-text: #f5f7fb;
+  --tg-hint: #9aa0ae;
+  --tg-btn: #1f9bff;
   --tg-btn-text: #ffffff;
 }
 
@@ -16,6 +16,10 @@ body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
   background: var(--tg-bg);
   color: var(--tg-text);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 #root {

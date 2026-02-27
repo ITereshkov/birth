@@ -8,4 +8,4 @@ export const formatMoney = (v: number) =>
 
 export const formatRuDate = (iso: string) => format(new Date(iso), 'd MMM yyyy', { locale: ru });
 
-export const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
+export const toInputDate = (date: Date) => format(date, 'yyyy-MM-dd');

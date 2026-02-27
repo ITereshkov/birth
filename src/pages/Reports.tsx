@@ -9,7 +9,7 @@ import { formatMoney } from '../lib/utils';
 export const Reports = () => {
   const { state } = useApp();
   const [period, setPeriod] = useState<Period>('month');
-  const [generated, setGenerated] = useState(true);
+  const [chart, setChart] = useState<'mix' | 'expense' | 'income'>('mix');
   const data = useMemo(() => reportData(state, periodRange(period)), [state, period]);
 
   const exportJson = () => {
@@ -21,13 +21,45 @@ export const Reports = () => {
   };
 
   return <div className="space-y-3 pb-4">
-    <Card><div className="flex gap-2"><Select value={period} onChange={(e)=>setPeriod(e.target.value as Period)}><option value="today">Сегодня</option><option value="week">Неделя</option><option value="month">Месяц</option></Select><Button onClick={()=>setGenerated(true)}>Сформировать отчёт</Button></div></Card>
-    {generated && <>
-      <Card><h3 className="mb-2 font-semibold">Расходы по категориям</h3>{data.pie.length===0 ? <p className="text-sm" style={{ color: 'var(--tg-hint)' }}>Нет расходов в выбранном периоде.</p> : <div className="h-52"><ResponsiveContainer><PieChart><Pie data={data.pie} dataKey="amount" nameKey="name" /></PieChart></ResponsiveContainer></div>}</Card>
-      <Card><h3 className="mb-2 font-semibold">Динамика по дням</h3><div className="h-52"><ResponsiveContainer><LineChart data={data.line}><XAxis dataKey="day" /><YAxis /><Tooltip /><Line type="monotone" dataKey="expense" stroke="#ef4444" /><Line type="monotone" dataKey="income" stroke="#10b981" /></LineChart></ResponsiveContainer></div></Card>
-      <Card><h3 className="mb-2 font-semibold">Доходы vs Расходы</h3><div className="h-52"><ResponsiveContainer><BarChart data={data.bar}><XAxis dataKey="name" /><YAxis /><Tooltip /><Bar dataKey="value" fill="#3b82f6" /></BarChart></ResponsiveContainer></div></Card>
-      <Card><h3 className="mb-2 font-semibold">Инсайты</h3><ul className="space-y-1 text-sm"><li>ТОП расход: {data.insights.topExpense?.name || '—'} — {formatMoney(data.insights.topExpense?.amount || 0)} ({Math.round(data.insights.topExpense?.share || 0)}%)</li><li>Средний расход/день: {formatMoney(data.insights.avgExpense)}</li><li>Дней в минус: {data.insights.minusDays}</li><li>Самая большая операция: {data.insights.maxTx ? formatMoney(data.insights.maxTx.amount) : '—'}</li></ul></Card>
-      <Button onClick={exportJson}>Скачать JSON</Button>
-    </>}
+    <h2 className="text-5xl font-bold">Отчет</h2>
+    <div className="grid grid-cols-3 gap-2">
+      <button onClick={() => setChart('expense')} className={`rounded-2xl border px-2 py-3 ${chart === 'expense' ? 'text-rose-400' : ''}`} style={{ background: 'var(--tg-surface)', borderColor: 'rgba(255,255,255,.1)' }}>Расходы</button>
+      <button onClick={() => setChart('mix')} className={`rounded-2xl border px-2 py-3 ${chart === 'mix' ? 'text-sky-400' : ''}`} style={{ background: 'var(--tg-surface)', borderColor: 'rgba(255,255,255,.1)' }}>Доходы и расходы</button>
+      <button onClick={() => setChart('income')} className={`rounded-2xl border px-2 py-3 ${chart === 'income' ? 'text-emerald-400' : ''}`} style={{ background: 'var(--tg-surface)', borderColor: 'rgba(255,255,255,.1)' }}>Доходы</button>
+    </div>
+
+    <Card><div className="flex gap-2"><Select value={period} onChange={(e) => setPeriod(e.target.value as Period)}><option value="today">Сегодня</option><option value="week">Неделя</option><option value="month">Месяц</option></Select><Button onClick={exportJson}>Скачать JSON</Button></div></Card>
+
+    <Card>
+      <div className="mb-2 flex justify-between text-sm" style={{ color: 'var(--tg-hint)' }}><span>Доходы {formatMoney(data.bar[0].value)}</span><span>Расходы {formatMoney(data.bar[1].value)}</span><span>Итого {formatMoney(data.bar[0].value - data.bar[1].value)}</span></div>
+      <div className="h-56">
+        <ResponsiveContainer>
+          <LineChart data={data.line}>
+            <XAxis dataKey="day" stroke="#9aa0ae" />
+            <YAxis stroke="#9aa0ae" />
+            <Tooltip />
+            {(chart === 'expense' || chart === 'mix') && <Line type="monotone" dataKey="expense" stroke="#fb7185" strokeWidth={2} />}
+            {(chart === 'income' || chart === 'mix') && <Line type="monotone" dataKey="income" stroke="#4ade80" strokeWidth={2} />}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </Card>
+
+    <Card>
+      <h3 className="mb-2 text-lg font-semibold">Расходы по категориям</h3>
+      {data.pie.length === 0 ? <p style={{ color: 'var(--tg-hint)' }}>За этот период данных нет</p> : <div className="h-52"><ResponsiveContainer><PieChart><Pie data={data.pie} dataKey="amount" nameKey="name" /></PieChart></ResponsiveContainer></div>}
+    </Card>
+
+    <Card>
+      <h3 className="mb-2 text-lg font-semibold">Инсайты</h3>
+      <ul className="space-y-1 text-sm">
+        <li>ТОП расход: {data.insights.topExpense?.name || '—'} — {formatMoney(data.insights.topExpense?.amount || 0)} ({Math.round(data.insights.topExpense?.share || 0)}%)</li>
+        <li>Средний расход/день: {formatMoney(data.insights.avgExpense)}</li>
+        <li>Дней в минус: {data.insights.minusDays}</li>
+        <li>Самая большая операция: {data.insights.maxTx ? formatMoney(data.insights.maxTx.amount) : '—'}</li>
+      </ul>
+    </Card>
+
+    <Card><div className="h-44"><ResponsiveContainer><BarChart data={data.bar}><XAxis dataKey="name" stroke="#9aa0ae" /><YAxis stroke="#9aa0ae" /><Tooltip /><Bar dataKey="value" fill="#1f9bff" /></BarChart></ResponsiveContainer></div></Card>
   </div>;
 };
