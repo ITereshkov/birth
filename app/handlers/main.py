@@ -6,7 +6,7 @@ from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile, Message, PreCheckoutQuery
+from aiogram.types import CallbackQuery, FSInputFile, Message, PreCheckoutQuery, ReactionTypeEmoji
 
 from app.keyboards.common import (
     HIDE_MENU,
@@ -69,7 +69,7 @@ async def _show_start(message: Message) -> None:
 
 @router.message(Command("start"))
 async def cmd_start(message: Message, repo_factory: RepositoryFactory, index_repo: UserIndexRepository) -> None:
-    user_id = message.from_user.id
+    user_id = message.chat.id
     repo = repo_factory.user_repo(user_id)
     repo.ensure_profile(user_id)
     index_repo.ensure_user(user_id)
@@ -89,7 +89,7 @@ async def cmd_help(message: Message) -> None:
 async def start_operation(message: Message, state: FSMContext) -> None:
     tx_type = _type_from_text(message.text)
     await state.set_state(OperationStates.waiting_amount)
-    await state.update_data(tx_type=tx_type.value)
+    await state.update_data(tx_type=tx_type.value, source_message_id=message.message_id)
     await message.answer("Введите сумму одной строкой, например: 1250", reply_markup=HIDE_MENU)
     await message.answer("Если передумали — нажмите отмену.", reply_markup=cancel_only_keyboard())
 
@@ -104,7 +104,7 @@ async def receive_amount(message: Message, state: FSMContext, repo_factory: Repo
     data = await state.get_data()
     tx_type = TxType(data["tx_type"])
     category_hint = parsed.category
-    await state.update_data(amount=parsed.amount, category_hint=category_hint)
+    await state.update_data(amount=parsed.amount, category_hint=category_hint, source_message_id=message.message_id)
     await _show_categories(message, state, repo_factory, tx_type, page=0)
 
 
@@ -115,7 +115,7 @@ async def _show_categories(
     tx_type: TxType,
     page: int,
 ) -> None:
-    user_id = message.from_user.id
+    user_id = message.chat.id
     repo = repo_factory.user_repo(user_id)
     categories = repo.list_categories(tx_type)
     await state.set_state(OperationStates.waiting_category)
@@ -151,10 +151,10 @@ async def create_new_category(message: Message, state: FSMContext, repo_factory:
         return
     data = await state.get_data()
     tx_type = TxType(data["tx_type"])
-    user_id = message.from_user.id
+    user_id = message.chat.id
     repo = repo_factory.user_repo(user_id)
     repo.add_category(category, tx_type)
-    await state.update_data(selected_category=category)
+    await state.update_data(selected_category=category, source_message_id=message.message_id)
     await _save_operation(message, state, repo_factory)
 
 
@@ -178,9 +178,20 @@ async def _save_operation(message: Message, state: FSMContext, repo_factory: Rep
     amount = float(data["amount"])
     category = str(data["selected_category"]).lower()
 
+    source_message_id = data.get("source_message_id")
     tx_id = repo.add_transaction(amount, category, tx_type, now_utc())
     await state.clear()
     await state.update_data(last_tx_id=tx_id)
+
+    if tx_type == TxType.INCOME and source_message_id:
+        try:
+            await message.bot.set_message_reaction(
+                chat_id=user_id,
+                message_id=int(source_message_id),
+                reaction=[ReactionTypeEmoji(emoji="🔥")],
+            )
+        except Exception:
+            pass
 
     human_date = format_human_date(now_msk().date())
     if tx_type == TxType.INCOME:
@@ -365,6 +376,7 @@ async def successful_payment(message: Message, repo_factory: RepositoryFactory, 
 
 
 @router.message(F.text == "⚙️ Настройки")
+@router.message(Command("settings"))
 async def cmd_settings(message: Message, repo_factory: RepositoryFactory) -> None:
     repo = repo_factory.user_repo(message.chat.id)
     profile = repo.get_profile(message.chat.id)
@@ -424,7 +436,7 @@ async def free_text_input(message: Message, state: FSMContext, repo_factory: Rep
     if not parsed:
         return
 
-    await state.update_data(amount=parsed.amount, category_hint=parsed.category)
+    await state.update_data(amount=parsed.amount, category_hint=parsed.category, source_message_id=message.message_id)
     if parsed.tx_type is None:
         await state.set_state(OperationStates.waiting_type)
         await message.answer("❓ Это доход или расход?", reply_markup=type_choice_keyboard())

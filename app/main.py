@@ -6,6 +6,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.types import BotCommand, MenuButtonCommands
 from dotenv import load_dotenv
 
 from app.config import load_settings
@@ -17,6 +18,19 @@ from app.services.exporter import ExportService
 from app.services.notifications import NotificationService
 from app.services.premium import PremiumService
 from app.services.reports import ReportService
+
+
+async def _setup_bot_menu(bot: Bot) -> None:
+    await bot.set_my_commands(
+        [
+            BotCommand(command="menu", description="Main menu"),
+            BotCommand(command="balance", description="Balance"),
+            BotCommand(command="settings", description="Settings"),
+            BotCommand(command="help", description="Help"),
+            BotCommand(command="start", description="Start"),
+        ]
+    )
+    await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
 
 def setup_logging() -> None:
@@ -32,6 +46,7 @@ async def run() -> None:
     settings = load_settings()
 
     bot = Bot(token=settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    await _setup_bot_menu(bot)
     dp = Dispatcher()
 
     repo_factory = RepositoryFactory(settings.user_db_dir)
