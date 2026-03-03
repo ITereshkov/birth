@@ -1,0 +1,14 @@
+app:
+  name: avito-copilot
+  timezone: Europe/Moscow
+
+optimizer:
+  max_daily_bid_change_pct: 20
+  default_bid_increase_pct: 10
+
+forecast:
+  baseline_window_days: 28
+  scenario_multipliers:
+    conservative: 0.85
+    base: 1.0
+    aggressive: 1.2
