@@ -61,3 +61,31 @@ GOAL_STAGE=learning ./scripts/build_recommendations.sh DATA data/out/daily_recom
 На выходе `daily_recommendations.json` также сохраняются:
 - `thresholds_used` (какие пороги применены),
 - `goal_stage`/`goal_priority`.
+
+
+## 4) Как протестировать работу
+
+### Быстрый smoke test (рекомендуется)
+```bash
+./scripts/smoke_test.sh
+```
+
+Он проверяет:
+- синтаксис shell-скриптов,
+- компиляцию Python-модулей,
+- построение `daily_report` и `daily_recommendations` на шаблонных данных,
+- структуру выходных JSON.
+
+### Опционально: live-тест сбора конкурентов из Avito
+```bash
+LIVE_AVITO=1 ./scripts/smoke_test.sh
+```
+
+> Если Avito ограничит запросы (429/captcha), это не поломка логики отчётов — просто повторить позже или переключить сбор в браузерный режим.
+
+### Ручной запуск по шагам
+```bash
+./scripts/build_daily_report.sh DATA data/out/daily_report.json
+./scripts/fetch_competitors_from_avito.sh data/inbox/ads_own.csv DATA/competitors_auto.csv
+GOAL_STAGE=learning ./scripts/build_recommendations.sh DATA data/out/daily_recommendations.json
+```
