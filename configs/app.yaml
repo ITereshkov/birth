@@ -1,0 +1,19 @@
+app:
+  name: avito-copilot
+  timezone: Europe/Moscow
+
+optimizer:
+  max_daily_bid_change_pct: 20
+  default_bid_increase_pct: 10
+  target_cpl_rub: 1300
+
+budget:
+  daily_limit_rub: 3500
+  monthly_limit_rub: 80000
+
+forecast:
+  baseline_window_days: 28
+  scenario_multipliers:
+    conservative: 0.85
+    base: 1.0
+    aggressive: 1.2

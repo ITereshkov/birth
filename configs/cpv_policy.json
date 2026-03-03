@@ -1,0 +1,49 @@
+{
+  "avito_cpv_knowledge": {
+    "mechanics": {
+      "cpv_dynamic": "Цена просмотра зависит от категории/региона/конкуренции и не фиксирована.",
+      "modes": ["manual_cpv", "auto_cpv"],
+      "manual_controls": ["cpv_value", "daily_spend_limit"],
+      "limit_behavior": "После окончания дневного лимита продвижение прекращается/цена снижается до минимума, объявление остаётся активным."
+    },
+    "strategy_rules": [
+      {
+        "id": "R1_quality_before_scale",
+        "when": "CTR low OR conversion_to_lead low",
+        "do": "Do NOT increase CPV. Improve photo/title/offer; run A/B test.",
+        "why": "Buying more views with weak card usually raises CPL."
+      },
+      {
+        "id": "R2_raise_to_fill_budget",
+        "when": "Spend < 60-70% of daily_limit for 2 days AND CPL <= target_CPL",
+        "do": "Increase CPV by small step; keep daily_limit.",
+        "why": "Higher CPV can unlock more volume when the card is already converting."
+      },
+      {
+        "id": "R3_reduce_when_cpl_bad",
+        "when": "CPL > target_CPL AND enough data",
+        "do": "Decrease CPV or reduce daily_limit; prioritize fixing card + lead processing.",
+        "why": "Scaling bad economics burns budget faster."
+      }
+    ],
+    "goal_priority_policy": [
+      {
+        "stage": "learning",
+        "priority": "Lead volume with CPL guardrail"
+      },
+      {
+        "stage": "scaling",
+        "priority": "CPL/ROI first, then volume"
+      }
+    ],
+    "thresholds": {
+      "min_ctr_for_scale": 0.065,
+      "target_cvr_min": 0.07,
+      "target_cvr_max": 0.10,
+      "max_acceptable_cpl": 2000,
+      "cpv_change_step_min": 0.08,
+      "cpv_change_step_max": 0.12,
+      "data_threshold_views": 300
+    }
+  }
+}
